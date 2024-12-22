@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  email     String   @unique
+  name      String
+  avatar    String?
+  posts     FeedbackPost[] @relation(name: "AuthorPosts")
+  comments  Comment[]  @relation(name: "AuthorComments")
+  upvotes   Upvote[] @relation(name: "UserUpvotes")
+}
+
+model FeedbackPost {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @db.Text
+  category    String
+  status      String
+  author_id   Int
+  author User @relation(name: "AuthorPosts", fields: [author_id], references: [id])
+  comments    Comment[] @relation(name: "PostComments")
+  upvotes   Upvote[] @relation(name: "PostUpvotes")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id              Int      @id @default(autoincrement())
+  content         String   @db.Text
+  author_id       Int
+  author          User  @relation(name: "AuthorComments", fields: [author_id], references: [id])
+  post_id         Int
+  post            FeedbackPost @relation(name: "PostComments", fields: [post_id], references: [id])
+  parent_comment_id Int?
+  parentComment Comment? @relation(name: "CommentReplies", fields: [parent_comment_id], references: [id])
+  replies Comment[] @relation(name: "CommentReplies")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Upvote {
+  id      Int @id @default(autoincrement())
+  user_id   Int
+  user   User @relation(name: "UserUpvotes", fields: [user_id], references: [id])
+  post_id   Int
+  post   FeedbackPost @relation(name: "PostUpvotes", fields: [post_id], references: [id])
+  @@unique([user_id, post_id])
+}
